@@ -46,6 +46,7 @@ jobs:
             --var "vpn_ip=${{ secrets.VPN_IP }}" \
             --var "app-branch=main" \
             --var "environment=${{ github.ref_name }}" \
+            --var sns_subscriptions=${{ secrets.SNS_SUBSCRIPTIONS }} \
             --input=false \
             --out terraform-plan
         
@@ -64,7 +65,7 @@ jobs:
         id: apply
         run: terraform apply terraform-plan
 
-        # temporary measure while build workflow and backend functionality is completely verified to prevent orphaned resources
-      - name: Terraform Destroy on Failure for non production deployments
-        if: failure() && steps.apply.outcome == 'failure' && github.ref_name != 'main'
-        run: terraform destroy -auto-approve
+      #   # only use if terraform begins creating orphaned resources, this indicates a remote state issue.
+      # - name: Terraform Destroy on Failure for non production deployments
+      #   if: failure() && steps.apply.outcome == 'failure' && github.ref_name != 'main'
+      #   run: terraform destroy -auto-approve
