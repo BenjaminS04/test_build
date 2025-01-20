@@ -46,7 +46,6 @@ jobs:
             --var "vpn_ip=${{ secrets.VPN_IP }}" \
             --var "app-branch=main" \
             --var "environment=${{ github.ref_name }}" \
-            --var "sns_subscriptions=${{ secrets.SNS_SUBSCRIPTIONS }}" \
             --input=false \
             --out terraform-plan
         
@@ -57,13 +56,12 @@ jobs:
             --var "vpn_ip=${{ secrets.VPN_IP }}" \
             --var "app-branch=test" \
             --var "environment=${{ github.ref_name }}" \
-            --var "vpn_ip=${{ secrets.SNS }}" \
             --input=false \
             --out terraform-plan
 
-      - name: Terraform Apply
-        id: apply
-        run: terraform apply terraform-plan
+      #- name: Terraform Apply
+      #  id: apply
+      #  run: terraform apply terraform-plan
 
       #   # only use if terraform begins creating orphaned resources, this indicates a remote state issue.
       # - name: Terraform Destroy on Failure for non production deployments
