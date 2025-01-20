@@ -1,0 +1,71 @@
+name: 'Deploy Workload Infrastructure'
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform_workload:
+    name: 'Deploy Workload Infrastructure using Terraform'
+    runs-on: ubuntu-latest
+    
+    env:
+      TF_VAR_environment: ${{ github.ref_name }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+    
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform with specified version
+        uses: hashicorp/setup-terraform@v3
+        with: 
+          terraform_version: 1.8.5
+
+      - name: Terraform Init with Remote Backend
+        run: |
+          terraform init \
+            -backend-config=backend-config-${{ github.ref_name }}.conf \
+            -backend-config="region=${{ secrets.AWS_REGION }}"
+
+      - name: Terraform Plan main
+        id: plan
+        if: github.ref_name == 'main'
+        run: |
+          terraform plan \
+            --var "vpn_ip=${{ secrets.VPN_IP }}" \
+            --var "app-branch=main" \
+            --var "environment=${{ github.ref_name }}" \
+            sns_subscriptions=${{ secrets.SNS_SUBSCRIPTIONS }} \
+            --input=false \
+            --out terraform-plan
+        
+      - name: terraform plan for non production deployments
+        if: github.ref_name != 'main'
+        run: |
+          terraform plan \
+            --var "vpn_ip=${{ secrets.VPN_IP }}" \
+            --var "app-branch=test" \
+            --var "environment=${{ github.ref_name }}" \
+            --var "vpn_ip=${{ secrets.SNS }}" \
+            --input=false \
+            --out terraform-plan
+
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply terraform-plan
+
+        # temporary measure while build workflow and backend functionality is completely verified to prevent orphaned resources
+      - name: Terraform Destroy on Failure for non production deployments
+        if: failure() && steps.apply.outcome == 'failure' && github.ref_name != 'main'
+        run: terraform destroy -auto-approve
