@@ -46,7 +46,6 @@ jobs:
             --var "vpn_ip=${{ secrets.VPN_IP }}" \
             --var "app-branch=main" \
             --var "environment=${{ github.ref_name }}" \
-            sns_subscriptions=${{ secrets.SNS_SUBSCRIPTIONS }} \
             --input=false \
             --out terraform-plan
         
