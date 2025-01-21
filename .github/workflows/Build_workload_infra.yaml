@@ -60,8 +60,8 @@ jobs:
             --out terraform-plan
 
       #- name: Terraform Apply
-      #  id: apply
-      #  run: terraform apply terraform-plan
+        #id: apply
+        #run: terraform apply terraform-plan
 
       #   # only use if terraform begins creating orphaned resources, this indicates a remote state issue.
       # - name: Terraform Destroy on Failure for non production deployments
